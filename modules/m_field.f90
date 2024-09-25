@@ -77,6 +77,7 @@ module m_field
                             matrix(i,j) = 0.0
                        end if 
                     end do
+
                 ! Right-hand side vector
                 if (i == 1) then
                         ! Apply left boundary conditions
@@ -138,12 +139,13 @@ module m_field
                     b(i) = matrix(i, i)    ! Main diagonal
                     c(i) = matrix(i-1, i)  ! Upper diagonal
                 end do
-                a(1) = 0.0
+
                 b(1) = matrix(1, 1)   ! First main diagonal element
                 c(1) = matrix(1, 2)   ! First upper diagonal element
+                c(2) = 1.0 ! beter uitwerken, dit moet anders kom je niet uit
+
                 cprime(1) = c(1) / b(1)
                 dprime(1) = d(1) / b(1)
-
                 do i = 2, Ngrid
                     cprime(i) = c(i) / (b(i) - a(i) * cprime(i-1))
                     dprime(i) = (d(i) - a(i) * dprime(i-1)) / (b(i) - a(i) * cprime(i-1))
@@ -183,15 +185,14 @@ module m_field
                 do i = 1, Ngrid+1
                     if (i == 1) then
                         ! At boundary
-                        E(i) = -(phi_ghost(2) - phi(2)) / delta_x
+                        E(i) = (phi_ghost(2) - phi(2)) / delta_x
                     else if (i == Ngrid .or. i == Ngrid + 1) then
                         ! At boundary
-                        E(i) = -(phi(Ngrid-1) - phi_ghost(Ngrid+3)) / delta_x
+                        E(i) = (phi(Ngrid-1) - phi_ghost(Ngrid+3)) / delta_x
                     else
-                        E(i) = -(phi(i) - phi(i+1)) / delta_x
+                        E(i) = (phi(i) - phi(i+1)) / delta_x
                     end if
                 end do
-                
         end subroutine calc_electric_field_fc
 
         subroutine calc_electric_field_cc(Ngrid, E, E_cc)
