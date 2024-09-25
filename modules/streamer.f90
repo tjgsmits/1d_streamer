@@ -46,8 +46,8 @@ program streamer
         call initial_dens(Nx, 1.e11, 0.1e-3, x, n_electron)
         call initial_dens(Nx, 1.e11, 0.1e-3, x, n_ion)
 
-        n_ion(:) = 1.e11
-        n_electron(:) = 1.e11
+        n_ion(:) = 0.e11
+        n_electron(:) = 0.e11
 
         ! Make the fdm simulation
         call simulation(Nx, L, t_sim, dt, V_left, V_right, n_ion, n_electron, E, phi, save_interval)        
@@ -137,34 +137,34 @@ program streamer
 
         ! Start time loop
         sim_type = 'explicit'
-        do t = 1, 2!tsteps
+        do t = 1, tsteps
                 if (sim_type == "explicit") then
                     v = -mob * E
 
-                    call CFL_check(Ngrid, v, delta_t, delta_t)
-                    call solve_diffusion(diff, delta_x, Ngrid, "neumann", 0.0, 0.0, n, n_diff)
-                    call solve_drift(mob, delta_x, Ngrid, "neumann", 0.0, 0.0, n, E, n_drift)
-                    call source_term(Ngrid, n, nion, E, n_gas, 'analytical', n_source)
+                    !call CFL_check(Ngrid, v, delta_t, delta_t)
+                    !call solve_diffusion(diff, delta_x, Ngrid, "neumann", 0.0, 0.0, n, n_diff)
+                    !call solve_drift(mob, delta_x, Ngrid, "neumann", 0.0, 0.0, n, E, n_drift)
+                    !call source_term(Ngrid, n, nion, E, n_gas, 'analytical', n_source)
 
                     ! Enforce BC on the drift and diffusion flux 
-                    call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_diff, n_drift_ghost)
-                    call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_drift, n_diff_ghost)
+                    !call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_diff, n_drift_ghost)
+                    !call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_drift, n_diff_ghost)
 
                     ! Enforce BC on the electron, ion and gas density
-                    call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n, n_ghost)
-                    call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, nion, nion_ghost)
-                    call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_gas, n_gas_ghost)
+                    !call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n, n_ghost)
+                    !call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, nion, nion_ghost)
+                    !call ghost_cell(Ngrid, delta_x, "neumann", 0.0, 0.0, n_gas, n_gas_ghost)
 
-                    do i = 1, Ngrid
-                        n_enew(i) = n_ghost(i+2) + delta_t * (n_diff_ghost(i+2) + n_drift_ghost(i+2) + n_source(i))
-                        n_inew(i) = nion_ghost(i+2) + delta_t * n_source(i)
-                        n_gnew(i) = n_gas_ghost(i+2) - delta_t * n_source(i)
-                    end do 
+                    !do i = 1, Ngrid
+                    !    n_enew(i) = n_ghost(i+2) + delta_t * (n_diff_ghost(i+2) + n_drift_ghost(i+2) + n_source(i))
+                    !    n_inew(i) = nion_ghost(i+2) + delta_t * n_source(i)
+                    !    n_gnew(i) = n_gas_ghost(i+2) - delta_t * n_source(i)
+                    !end do 
             
                     ! Update old density field to new density field
-                    n(:) = n_enew(:)
-                    nion(:) = n_inew(:)
-                    n_gas(:) = n_gnew(:)
+                    !n(:) = n_enew(:)
+                    !nion(:) = n_inew(:)
+                    !n_gas(:) = n_gnew(:)
                     
                     ! Update potential
                     phi_old(:) = phi(:)
