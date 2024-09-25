@@ -34,9 +34,8 @@ module m_fluid
                         return
                 end if
 
-                frac = diff / delta_x
+                frac = diff / delta_x**2
                 call ghost_cell(Ngrid, delta_x, BC_type, bc_value1, bc_value2, n, n_ghost)
-
                 do i=1, Ngrid
                         ! At start boundary
                         if (i==1) then
@@ -49,8 +48,11 @@ module m_fluid
                                 ! The flux (f_{i+1/2}) at the cell surface
                                 flux(i) =  n(i) - n(i+1)
                         end if
-                        ! Calculate the diffusion flux (f^a = f_{i-1/2} - f_{i+1/2}) in the cell volume
-                        n_diff(i) = frac * flux(i) !(flux(i-1) - flux(i+1))
+                end do
+
+                do i=2,Ngrid+1
+                        ! Calculate the advection flux (f^a = f_{i-1/2} - f_{i+1/2}) in the cell volume            
+                        n_diff(i-1) = frac * (flux(i-1) - flux(i+1))
                 end do
         end subroutine solve_diffusion 
 
@@ -83,7 +85,6 @@ module m_fluid
                 do i=1, Ngrid
                         ! Calculated the drift velocity
                         v = -mob * E(i)
-
                         if (i==1) then
                                 ! Upwind flux depending on the sign of v
                                 if (v >= 0.0) then
@@ -94,7 +95,7 @@ module m_fluid
                                         r = (n(i) - n_ghost(2)) / (n(i+1) - n(i))
                                         ! The flux (f_{i+1/2}) at the cell surface
                                         flux(i) = v * (n(i) + koren_limiter(r) * (n(i+1) - n(i)))
-                                end if     
+                                end if
                         else if (i == Ngrid) then
                                 ! Upwind flux depending on the sign of v
                                 if (v >= 0.0) then
@@ -122,9 +123,13 @@ module m_fluid
                                         flux(i) = v * (n(i) + koren_limiter(r) * (n(i+1) - n(i)))
                                 end if     
                         end if
-                        ! Calculate the advection flux (f^a = f_{i-1/2} - f_{i+1/2}) in the cell volume            
-                        n_drift(i) = frac * (flux(i-1) - flux(i+1))
                 end do
+
+                do i=2,Ngrid+1
+                        ! Calculate the advection flux (f^a = f_{i-1/2} - f_{i+1/2}) in the cell volume            
+                        n_drift(i-1) = frac * (flux(i-1) - flux(i+1))
+                end do
+                
         end subroutine solve_drift
 
         function koren_limiter(r) result(phi_koren)

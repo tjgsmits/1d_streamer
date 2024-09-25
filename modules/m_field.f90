@@ -7,7 +7,7 @@ module m_field
   public :: calc_initial_potential
   public :: calc_potential
   public :: calc_electric_field_fc
-  !public :: calc_electric_field_cc
+  public :: calc_electric_field_cc
 
         contains
         subroutine calc_initial_potential(Ngrid, V_1, V_2, phi)
@@ -76,10 +76,10 @@ module m_field
                 ! Right-hand side vector
                 if (i == 1) then
                         ! Apply left boundary conditions
-                        d(i) = frac * (nion(i) - n(i)) - phi_ghost(2)
+                        d(i) = -V_1
                 else if (i == Ngrid) then
                         ! Apply right boundary conditions
-                        d(i) = frac * (nion(i) - n(i)) - phi_ghost(Ngrid+3)
+                        d(i) =  -V_2
                 else 
                         d(i) = frac * (nion(i) - n(i))
                 end if 
@@ -87,6 +87,8 @@ module m_field
         
             ! Solve the tridiagonal system here
             call solve_tridiag(Ngrid, phi_old, a, b, c, d, solve_type, phi_calc)
+            !write(*,*) 'phi'
+            !write(*,*) phi_calc
         end subroutine calc_potential
         
         subroutine solve_tridiag(Ngrid, n_old, a, b, c, d, solve_type, n)
@@ -172,36 +174,36 @@ module m_field
                 call ghost_cell(Ngrid, delta_x, "dirichlet", V_1, V_2, phi, phi_ghost)
 
                 ! Calculate electric field based on potential
-                do i = 1, Ngrid
-                    ! Gaan hier de BC fout?
+                do i = 1, Ngrid+1
                     if (i == 1) then
                         ! At boundary
-                        E(i) = -(phi_ghost(2) - phi(1)) / delta_x
-                    else if (i == Ngrid) then
+                        E(i) = -(phi_ghost(2) - phi(2)) / delta_x
+                    else if (i == Ngrid .or. i == Ngrid + 1) then
                         ! At boundary
-                        E(i) = -(phi(Ngrid) - phi_ghost(Ngrid+3)) / delta_x
+                        E(i) = -(phi(Ngrid-1) - phi_ghost(Ngrid+3)) / delta_x
                     else
                         E(i) = -(phi(i) - phi(i+1)) / delta_x
                     end if
                 end do
+                
         end subroutine calc_electric_field_fc
 
-        !subroutine calc_electric_field_cc(Ngrid, E, E_cc)
-        !    integer, intent(in) :: Ngrid
-        !    real, intent(in)    :: E(Ngrid)
-        !    real, intent(out)   :: E_cc(Ngrid)
-        !    integer             :: i
-        !
-        !    do i=1, Ngrid
-        !        if (i == 1) then
-        !            ! Forward difference for the left boundary
-        !            E_cc(i) = (E(i+1) - E(i)) / 2.0
-        !        else if (i == Ngrid) then
-        !            ! Backward difference for the right boundary
-        !            E_cc(i) = (E(i) - E(i-1)) / 2.0
-        !        else
-        !            E_cc(i) = (E(i-1) + E(i+1)) / 2.0
-        !        end if
-        !    end do
-        !end subroutine calc_electric_field_cc
+        subroutine calc_electric_field_cc(Ngrid, E, E_cc)
+            integer, intent(in) :: Ngrid
+            real, intent(in)    :: E(Ngrid)
+            real, intent(out)   :: E_cc(Ngrid)
+            integer             :: i
+        
+            do i=1, Ngrid
+                if (i == 1) then
+                    ! Forward difference for the left boundary
+                    E_cc(i) = (E(i+1) - E(i)) / 2.0
+                else if (i == Ngrid) then
+                    ! Backward difference for the right boundary
+                    E_cc(i) = (E(i) - E(i-1)) / 2.0
+                else
+                    E_cc(i) = (E(i-1) + E(i+1)) / 2.0
+                end if
+            end do
+        end subroutine calc_electric_field_cc
 end module m_field

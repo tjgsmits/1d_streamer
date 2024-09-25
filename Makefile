@@ -35,5 +35,4 @@ $(OBJDIR)/streamer.o: $(SRCDIR)/streamer.f90
 
 # Clean target to remove compiled files
 clean:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod streamer
-
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod streamer 
