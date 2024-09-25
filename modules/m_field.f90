@@ -57,12 +57,17 @@ module m_field
                     do j=1, Ngrid
                        ! At start of the matrix
                        if (i == 1 .and. j == 1) then
-                            matrix(i, j) = b(i)
+                            ! Ensure proper handling of BC
+                            matrix(i, :) = 0.0
+                            matrix(i, j) = 1.0
                        ! At end of the matrix
                        else if (i == Ngrid .and. j == Ngrid) then
-                            matrix(i, j) = b(i)
-                       ! Fulling the rest of the matrix
-                       else if (i == j - 1) then
+                            ! Ensure proper handling of BC
+                            matrix(i, :) = 0.0
+                            matrix(i, j) = 1.0
+
+                       ! Filling the rest of the matrix
+                       else if (i == j - 1 .and. i /= 1) then
                             matrix(i, j) = a(i)
                        else if (i == j) then 
                             matrix(i, j) = b(i)
@@ -72,69 +77,70 @@ module m_field
                             matrix(i,j) = 0.0
                        end if 
                     end do
-
                 ! Right-hand side vector
                 if (i == 1) then
                         ! Apply left boundary conditions
-                        d(i) = -V_1
+                        d(i) = V_1
                 else if (i == Ngrid) then
                         ! Apply right boundary conditions
-                        d(i) =  -V_2
+                        d(i) = V_2
                 else 
                         d(i) = frac * (nion(i) - n(i))
-                end if 
+                        
+                end if
             end do
-        
-            ! Solve the tridiagonal system here
-            call solve_tridiag(Ngrid, phi_old, a, b, c, d, solve_type, phi_calc)
-            !write(*,*) 'phi'
-            !write(*,*) phi_calc
+
+            call solve_tridiag(Ngrid, phi_old, matrix, d, solve_type, phi_calc)
         end subroutine calc_potential
         
-        subroutine solve_tridiag(Ngrid, n_old, a, b, c, d, solve_type, n)
+        subroutine solve_tridiag(Ngrid, n_old, matrix, d, solve_type, n)
             integer, intent(in)             :: Ngrid
             real, intent(in)                :: n_old(Ngrid)
-            real, intent(in)                :: a(Ngrid)
-            real, intent(in)                :: b(Ngrid)
-            real, intent(in)                :: c(Ngrid)
-            real, intent(in)                :: d(Ngrid)
+            real,intent(in)                 :: matrix(Ngrid, Ngrid), d(Ngrid)
             character(len=6), intent(in)    :: solve_type
             real, intent(out)               :: n(Ngrid)
             integer                         :: k,i, max_iter
             real                            :: tol, error
+            real                            :: a(Ngrid), b(Ngrid), c(Ngrid)
             real                            :: n_old_calc(Ngrid)
             real                            :: cprime(Ngrid), dprime(Ngrid)
 
             if (solve_type == "Jacobi") then
-                ! Jacobi Method
+                ! Jacobi method
                 tol = 1.e-5
-                max_iter = 1e6
-                do k=1,max_iter
-                    if (k == 1) then 
-                        do i=1, Ngrid
-                            n(i) = (1 / b(i)) * (d(i) - a(i) * n_old(i-1) - c(i) * n_old(i+1))
-                        end do
-                    else
-                        do i=1, Ngrid
-                            n(i) = (1 / b(i)) * (d(i) - a(i) * n_old_calc(i-1) - c(i) * n_old_calc(i+1))
-                        end do
-                    end if
+                 max_iter = 1e6
+                n_old_calc = 0.0  ! Initialize old guess for the Jacobi iteration
 
-                    error = maxval(abs(n - n_old))
+                do k = 1, max_iter
+                    ! Jacobi iteration
+                    do i = 1, Ngrid
+                        n(i) = (1 / matrix(i, i)) * (d(i) - sum(matrix(i, :) * n_old_calc(:)))
+                    end do
+
+                    error = maxval(abs(n - n_old_calc))
                     if (error < tol) then
-                        write(*,*) "Convergence is reached"
+                        write(*,*) "Convergence is reached after ", k, " iterations"
                         exit
                     end if
 
-                    n_old_calc(:) = n(:)
+                    n_old_calc = n  ! Update the old guess with the current iteration
                     if (k == max_iter) then
-                        write(*,*) 'No convergence is reaced'
+                        write(*,*) "Jacobi method did not converge"
                         error stop
                     end if
                 end do
 
             else if (solve_type == "Thomas") then
-                ! Thomas algorithm (Forward sweep)
+                ! Thomas algorithm, this part assumes that A is tridiagonal
+                ! Extract a, b, and c from the full matrix A for Thomas
+                 do i = 2, Ngrid
+                    a(i) = matrix(i, i-1)  ! Lower diagonal
+                    b(i) = matrix(i, i)    ! Main diagonal
+                    c(i) = matrix(i-1, i)  ! Upper diagonal
+                end do
+                a(1) = 0.0
+                b(1) = matrix(1, 1)   ! First main diagonal element
+                c(1) = matrix(1, 2)   ! First upper diagonal element
                 cprime(1) = c(1) / b(1)
                 dprime(1) = d(1) / b(1)
 
@@ -142,17 +148,17 @@ module m_field
                     cprime(i) = c(i) / (b(i) - a(i) * cprime(i-1))
                     dprime(i) = (d(i) - a(i) * dprime(i-1)) / (b(i) - a(i) * cprime(i-1))
                 end do
-        
+            
                 ! Backward substitution
                 n(Ngrid) = dprime(Ngrid)
                 do i = Ngrid-1, 1, -1
                     n(i) = dprime(i) - cprime(i) * n(i+1)
                 end do
 
-            else
-                write(*,*) "Choose solve type electric potential"
-                error stop
-            end if
+                else
+                    write(*,*) "Choose solve type electric potential"
+                    error stop
+                end if
         end subroutine solve_tridiag
 
         subroutine calc_electric_field_fc(Ngrid, delta_x, V_1, V_2, phi, E)
