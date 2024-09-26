@@ -6,7 +6,7 @@ def parse_data(filename, selected_steps):
     """
     Parses the data from the input file and returns numpy arrays for x, E, phi, n, and nion for selected time steps.
     Assumes the input data has the following columns:
-    x | E | phi | n | nion
+    x | nion | phi | n | E
     """
     with open(filename, 'r') as file:
         lines = file.readlines()
@@ -22,7 +22,7 @@ def parse_data(filename, selected_steps):
             try:
                 step_number = int(line.split(':')[1].strip())
                 current_step = step_number
-                data_dict[current_step] = {'x': [], 'E': [], 'phi': [], 'n': [], 'nion': []}
+                data_dict[current_step] = {'x': [], 'nion': [], 'phi': [], 'n': [], 'E': []}
             except ValueError:
                 current_step = None
         elif "------" in line:
@@ -68,8 +68,8 @@ def plot_data(x_all, E_all, phi_all, n_all, nion_all, selected_steps, colors):
         # Plot E vs x
         axes[0, 0].plot(x, E, label=f'Time Step: {step}', color=color, marker='o')
         axes[0, 0].set_xlabel('x (m)')
-        axes[0, 0].set_ylabel('E (V/m)')
-        axes[0, 0].set_title('Electric Field (E) vs x')
+        axes[0, 0].set_ylabel('nion (1/m^3)')
+        axes[0, 0].set_title('Ion Density (nion) vs x')
         axes[0, 0].grid(True)
 
         # Plot phi vs x
@@ -89,8 +89,8 @@ def plot_data(x_all, E_all, phi_all, n_all, nion_all, selected_steps, colors):
         # Plot nion vs x
         axes[1, 1].plot(x, nion, label=f'Time Step: {step}', color=color, marker='o')
         axes[1, 1].set_xlabel('x (m)')
-        axes[1, 1].set_ylabel('nion (1/m^3)')
-        axes[1, 1].set_title('Ion Density (nion) vs x')
+        axes[1, 1].set_ylabel('E (V/m)')
+        axes[1, 1].set_title('Electric Field (E) vs x')
         axes[1, 1].grid(True)
 
     # Add legends to all plots

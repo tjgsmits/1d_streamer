@@ -11,7 +11,7 @@ OBJ = $(OBJDIR)/m_cells.o $(OBJDIR)/m_read_in_data.o $(OBJDIR)/m_field.o $(OBJDI
 
 # Default target: build the executable
 streamer: $(OBJ)
-	$(FC) $(FLAGS) -o streamer $(OBJ)
+	$(FC) $(FLAGS) -o streamer_1D $(OBJ)
 
 # Compile m_read_in_data module
 $(OBJDIR)/m_cells.o: $(SRCDIR)/m_cells.f90

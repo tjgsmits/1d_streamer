@@ -1,7 +1,6 @@
 program streamer
         use m_field
         use m_fluid
-        !use m_read_in_data
         use m_cells
     
         implicit none
@@ -20,16 +19,14 @@ program streamer
         real, allocatable :: E(:)
         real, allocatable :: phi(:)
         real, allocatable :: x(:)
-        !real, allocatable :: x_data(:), y_data(:)
-        !real, allocatable :: x_new(:), y_new(:)
     
-        Nx            = 100
+        Nx            = 500
         L             = 10e-3
         t_sim         = 10e-9
-        dt            = 1e-12
+        dt            = 1e-13
         V_right       = 0.0
         V_left        = 500.e2
-        save_interval = 10
+        save_interval = 1000
     
         allocate(n_electron(Nx))
         allocate(n_ion(Nx))
@@ -43,17 +40,11 @@ program streamer
         end do
 
         ! Set-up initial densities
-        call initial_dens(Nx, 1.e11, 0.1e-3, x, n_electron)
-        call initial_dens(Nx, 1.e11, 0.1e-3, x, n_ion)
+        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Constant", n_electron)
+        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Constant", n_ion)
 
-        n_ion(:) = 1.e11
-        n_electron(:) = 1.e11
-
-        ! Make the fdm simulation
+        ! Make the simulation
         call simulation(Nx, L, t_sim, dt, V_left, V_right, n_ion, n_electron, E, phi, save_interval)        
-        !call table_from_file("N2_O2_simple_chemistry.txt", "Diffusion coefficient *N (1/m/s)", x_data, y_data)
-        !call lin_interp(x_data, y_data, 1000, x_new, y_new)
-
     contains
 
     subroutine time_integration(Ngrid, L_domain, t_end, delta_t, V_1, V_2, n, nion, E, phi, save_interval, tsteps, delta_x)
@@ -96,7 +87,7 @@ program streamer
         open(unit=file, file=filename, status='replace')
     
         ! Write header
-        write(file, '(A)') 'Time Step |         x        |         E        |       phi       |         n        |       nion      '
+        write(file, '(A)') 'Time Step |         x        |         nion        |       phi       |         n        |       E      '
         write(file, '(A)') '-------------------------------------------------------------'
     
         ! Determine the initial potential due to the applied voltage
@@ -116,7 +107,7 @@ program streamer
         ! Write the initial conditions to the output file
         write(file, '(A, I4, A)') 'Time Step:', 0, ':'
         do i = 1, Ngrid
-                write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), E(i), phi(i), n(i), nion(i)                
+            write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), nion(i), phi(i), n(i), E(i)                  
         end do
         
         ! Calculate the gas density
@@ -139,8 +130,8 @@ program streamer
         do t = 1, tsteps
                 if (sim_type == "explicit") then
                     v = -mob * E
-                    !E(:) = 0.0
-                    !call CFL_check(Ngrid, v, delta_t, delta_t)
+        
+                    call CFL_check(Ngrid, v, delta_t, delta_t)
                     call solve_diffusion(diff, delta_x, Ngrid, "neumann", 0.0, 0.0, n, n_diff)
                     call solve_drift(mob, delta_x, Ngrid, "neumann", 0.0, 0.0, n, E, n_drift)
                     call source_term(Ngrid, n, nion, E, n_gas, 'analytical', n_source)
@@ -185,9 +176,9 @@ program streamer
 
                     ! Save data at specified intervals
                     if (MOD(t, save_interval) == 0 .or. t == 1) then
-                        write(file, '(A, I4, A)') 'Time Step:', t, ':'
+                        write(file, '(A, I10, A)') 'Time Step:', t, ':'
                         do i = 1, Ngrid
-                                write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), E(i), phi(i), n(i), nion(i)                
+                            write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), nion(i), phi(i), n(i), E(i)               
                         end do
                         write(file, *) ''  ! Blank line for separation
                     end if

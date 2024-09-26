@@ -110,7 +110,7 @@ module m_field
                 ! Jacobi method
                 tol = 1.e-5
                  max_iter = 1e6
-                n_old_calc = 0.0  ! Initialize old guess for the Jacobi iteration
+                n_old_calc = n_old  ! Initialize old guess for the Jacobi iteration
 
                 do k = 1, max_iter
                     ! Jacobi iteration
@@ -175,18 +175,18 @@ module m_field
                 ! Ensure boundary conditions are applied correctly
                 if (Ngrid < 2) then
                     print *, "*ERROR* Ngrid must be greater than 1"
-                    return
+                    error stop
                 end if
 
                 ! Construct ghost layer
                 call ghost_cell(Ngrid, delta_x, "dirichlet", V_1, V_2, phi, phi_ghost)
 
-                ! Calculate electric field based on potential
                 do i = 1, Ngrid+1
                     if (i == 1) then
                         ! At boundary
                         E(i) = (phi_ghost(2) - phi(2)) / delta_x
-                    else if (i == Ngrid .or. i == Ngrid + 1) then
+
+                    else if (i >= Ngrid) then
                         ! At boundary
                         E(i) = (phi(Ngrid-1) - phi_ghost(Ngrid+3)) / delta_x
                     else

@@ -160,7 +160,7 @@ module m_fluid
                                 if (E(i) == 0.0) then
                                         n_source(i) = 0.0
                                 else 
-                                        n_source(i) = n(i) * exponent(-1.0/E(i)) !- nion(i) * exponent(1.0/E(i))
+                                        n_source(i) = n(i) * exponent(-1.0/E(i)) - nion(i) * exponent(1.0/E(i))
                                 end if
                         end do
                 case('reaction_rates')
@@ -179,17 +179,42 @@ module m_fluid
                 end select
         end subroutine source_term
 
-        subroutine initial_dens(Ngrid, N0, sigma, x, dens)
-                integer, intent(in)     :: Ngrid
-                real, intent(in)        :: N0
-                real, intent(in)        :: sigma
-                real, intent(in)        :: x(Ngrid)
-                real, intent(out)       :: dens(Ngrid)
-                integer                 :: i
+        subroutine initial_dens(Ngrid, N0, sigma, x, dens_type, dens)
+                integer, intent(in)             :: Ngrid
+                real, intent(in)                :: N0
+                real, intent(in)                :: sigma
+                real, intent(in)                :: x(Ngrid)
+                character(len=*), intent(in)    :: dens_type
+                real, intent(out)               :: dens(Ngrid)
+                integer                         :: i
 
-                do i=1, Ngrid
-                        dens(i) = N0 * exponent(-(x(i)**2)/(2 * sigma**2))
-                end do
+                select case(dens_type)
+                case("Exponential")
+                        do i=1, Ngrid
+                                dens(i) = N0 * exponent(-(x(i)**2)/(2 * sigma**2))
+                        end do
+                case("Constant")
+                        dens(:) = N0
+                case("Point")
+                        dens(:) = 0.0
+                        dens(Ngrid/2) = N0
+                case("Point_step")
+                        if (Ngrid < 5) then
+                                write(*,*) "Grid is to small for initial density"
+                                error stop
+                        end if
+                        dens(:) = 0.0
+                        dens(Ngrid/2) = N0
+
+                        dens(Ngrid/2+1) = N0/2
+                        dens(Ngrid/2-1) = N0/2
+
+                        dens(Ngrid/2+2) = N0/4
+                        dens(Ngrid/2-2) = N0/4
+                case default
+                        write(*,*) "CHOOSE TYPE OF INITIAL DENSITY PROFILE"
+                        error stop
+                end select
         end subroutine initial_dens
 
         subroutine gas_density(Ngrid, p, T, n_gas)
