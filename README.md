@@ -3,7 +3,7 @@ This code contains an 1D fluid model to simulate a drift-diffusion equation,
 $\frac{\partial n}{\partial t} = \frac{\partial}{\partial x}(\mu n \textbf{E} + D\frac{\partial n}{\partial x}) + S$
 which is coupled with 
 $E = - \frac{\partial \phi}{\partial x}$
-$\frac{\partial^2 \phi}{\partial x^2}$ = \frac{e}{\epsilon_0}(n_i - n_e)$
+$\frac{\partial^2 \phi}{\partial x^2}$ = \frac{e}{\epsilon_0} (n_i - n_e)$
 which is solved using a finit volum method (FVM). 
 
 The code can be complide with
