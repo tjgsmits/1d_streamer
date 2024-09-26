@@ -160,12 +160,12 @@ module m_fluid
                                 if (E(i) == 0.0) then
                                         n_source(i) = 0.0
                                 else 
-                                        n_source(i) = n(i) * exponent(-1.0/E(i)) - nion(i) * exponent(1.0/E(i))
+                                        n_source(i) = n(i) * exponent(-1.0/E(i))
                                 end if
                         end do
                 case('reaction_rates')
-                        k_ion = 1e16
-                        k_att = 1e11
+                        k_ion = 1e-12
+                        k_att = 1e-14
                         do i=1,Ngrid
                                 if (E(i) == 0.0) then
                                         n_source(i) = 0.0
