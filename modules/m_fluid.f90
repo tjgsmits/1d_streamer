@@ -20,8 +20,8 @@ contains
     integer, intent(in) :: Ngrid
     character(len=*), intent(in) :: BC_type
     real, intent(in)             :: bc_value1, bc_value2
-    real, intent(in)    :: n(Ngrid)
-    real, intent(out)   :: n_diff(Ngrid)
+    real, intent(in)    :: n(1-n_gc:Ngrid+n_gc)
+    real, intent(out)   :: n_diff(10:Ngrid)
     integer             :: i
     real                :: frac
     real                :: flux(Ngrid+1)
@@ -182,38 +182,39 @@ contains
     end select
   end subroutine source_term
 
-  subroutine initial_dens(Ngrid, N0, sigma, x, dens_type, dens)
-    integer, intent(in)             :: Ngrid
-    real, intent(in)                :: N0
-    real, intent(in)                :: sigma
-    real, intent(in)                :: x(Ngrid)
-    character(len=*), intent(in)    :: dens_type
-    real, intent(out)               :: dens(Ngrid)
-    integer                         :: i
+  subroutine initial_dens(mesh, N0, sigma, x, dens_type)
+    type(mesh_t), intent(inout)  :: mesh
+    real, intent(in)             :: N0
+    real, intent(in)             :: sigma
+    real, intent(in)             :: x(Ngrid)
+    character(len=*), intent(in) :: dens_type
+    integer                      :: i
 
     select case(dens_type)
     case("Exponential")
-       do i=1, Ngrid
-          dens(i) = N0 * exponent(-(x(i)**2)/(2 * sigma**2))
+       do i=1, mesh%Nx
+          mesh%n_electron(i) = N0 * exponent(-(x(i)**2)/(2 * sigma**2))
+          mesh%n_ion(i) = mesh%n_electron(i)
        end do
     case("Constant")
-       dens(:) = N0
-    case("Point")
-       dens(:) = 0.0
-       dens(Ngrid/2) = N0
+       mesh%n_electron(:) = N0
+       mesh%n_ion(:) = mesh%n_electron(:)
     case("Point_step")
-       if (Ngrid < 5) then
+       if (mesh%Nx < 5) then
           write(*,*) "Grid is to small for initial density"
           error stop
        end if
-       dens(:) = 0.0
-       dens(Ngrid/2) = N0
 
-       dens(Ngrid/2+1) = N0/2
-       dens(Ngrid/2-1) = N0/2
+       mesh%n_electron(:) = 0.0
+       mesh%n_electron(mesh%Nx/2) = N0
 
-       dens(Ngrid/2+2) = N0/4
-       dens(Ngrid/2-2) = N0/4
+       mesh%n_electron(mesh%Nx/2+1) = N0/2
+       mesh%n_electron(mesh%Nx/2-1) = N0/2
+
+       mesh%n_electron(mesh%Nx/2+2) = N0/4
+       mesh%n_electron(mesh%Nx/2-2) = N0/4
+
+       mesh%n_ion(:) = mesh%n_electron(:)
     case default
        write(*,*) "CHOOSE TYPE OF INITIAL DENSITY PROFILE"
        error stop
