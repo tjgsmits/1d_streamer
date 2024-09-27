@@ -1,13 +1,13 @@
 # Compiler and flags
 FC = gfortran
-FLAGS = -Wall -O2
+FLAGS = -Wall -O2 -g -ffpe-trap=invalid,zero,overflow -pedantic -finit-real=snan
 
 # Source and object directories
 SRCDIR = modules
 OBJDIR = modules
 
 # Object files
-OBJ = $(OBJDIR)/m_cells.o $(OBJDIR)/m_field.o $(OBJDIR)/m_fluid.o $(OBJDIR)/streamer.o
+OBJ = $(OBJDIR)/m_cells.o $(OBJDIR)/m_field.o $(OBJDIR)/m_fluid.o $(OBJDIR)/streamer.o $(OBJDIR)/m_types.o
 
 # Default target: build the executable
 streamer: $(OBJ)
@@ -19,4 +19,12 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.f90
 
 # Clean target to remove compiled files
 clean:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod streamer 
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod streamer
+
+$(OBJDIR)/streamer.o: $(OBJDIR)/m_cells.o $(OBJDIR)/m_field.o $(OBJDIR)/m_fluid.o $(OBJDIR)/m_types.o
+$(OBJDIR)/m_fluid.o: $(OBJDIR)/m_types.o
+$(OBJDIR)/m_cells.o: $(OBJDIR)/m_types.o
+$(OBJDIR)/m_field.o: $(OBJDIR)/m_types.o
+
+
+

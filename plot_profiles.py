@@ -5,12 +5,12 @@ import pandas as pd
 # Set up the argument parser
 p = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-p.add_argument("-output_files", type=str, nargs='+', help="Space-separated list of data files to be plotted")
+p.add_argument("output_files", type=str, nargs='+', help="Space-separated list of data files to be plotted")
 p.add_argument("-colors", type=str, nargs='+', help="Space-separated list of colors for the different data files")
 args = p.parse_args()
 
 # Read data from each file into a list of DataFrames
-data = [pd.read_csv(f.strip(), sep='\s+', header=None, skiprows=2, 
+data = [pd.read_csv(f.strip(), sep=r'\s+', header=None, skiprows=2,
                     names=["x", "nion", "phi", "n", "E"]) for f in args.output_files]
 
 # Create a 2x2 subplot
@@ -18,9 +18,14 @@ fig, axes = plt.subplots(2, 2, figsize=(10, 8), constrained_layout=True)
 
 # Loop through each dataset and plot
 for i, df in enumerate(data):
-    color = args.colors[i % len(args.colors)]  # Cycle through colors if more files than colors
+    if args.colors is not None:
+        # Cycle through colors if more files than colors
+        color = args.colors[i % len(args.colors)]
+    else:
+        color = None
+
     filename = args.output_files[i].split('/')[-1]  # Get only the filename without the path
-    
+
     # Plot nion vs x
     axes[0, 0].plot(df["x"], df["nion"], color=color, marker='o', label=filename)
     axes[0, 0].set_xlabel('x (m)')
