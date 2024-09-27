@@ -64,7 +64,7 @@ module m_cells
         open(unit=file_unit, file=filename, status='replace')
         
         ! Write header
-        write(file_unit, '(A)') 'Time Step |         x        |         nion        |       phi       |         n        |       E      '
+        write(file_unit, '(A)') '|      x     |       nion     |       phi       |       n      |       E      |'
         write(file_unit, '(A)') '-------------------------------------------------------------'
     
         ! Write data for each grid point
