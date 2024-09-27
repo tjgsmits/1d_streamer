@@ -147,6 +147,7 @@ module m_fluid
                 real, intent(out)            :: n_source(Ngrid)
                 integer                      :: i
                 real                         :: k_att, k_ion
+                real                         :: alpha, beta
 
                 ! Ensure boundary conditions are applied correctly
                 if (Ngrid < 2) then
@@ -159,8 +160,10 @@ module m_fluid
                         do i=1,Ngrid
                                 if (E(i) == 0.0) then
                                         n_source(i) = 0.0
-                                else 
-                                        n_source(i) = n(i) * exponent(-1.0/E(i))
+                                else    
+                                        alpha = 1340713.2425426769
+                                        beta  = 29558220.53333022
+                                        n_source(i) = alpha * exponent(-beta/E(i))
                                 end if
                         end do
                 case('reaction_rates')

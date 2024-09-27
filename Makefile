@@ -7,7 +7,7 @@ SRCDIR = modules
 OBJDIR = modules
 
 # Object files
-OBJ = $(OBJDIR)/m_cells.o $(OBJDIR)/m_read_in_data.o $(OBJDIR)/m_field.o $(OBJDIR)/m_fluid.o $(OBJDIR)/streamer.o
+OBJ = $(OBJDIR)/m_cells.o $(OBJDIR)/m_field.o $(OBJDIR)/m_fluid.o $(OBJDIR)/streamer.o
 
 # Default target: build the executable
 streamer: $(OBJ)
@@ -16,10 +16,6 @@ streamer: $(OBJ)
 # Compile m_read_in_data module
 $(OBJDIR)/m_cells.o: $(SRCDIR)/m_cells.f90
 	$(FC) $(FLAGS) -c $(SRCDIR)/m_cells.f90 -o $(OBJDIR)/m_cells.o
-
-# Compile m_read_in_data module
-$(OBJDIR)/m_read_in_data.o: $(SRCDIR)/m_read_in_data.f90
-	$(FC) $(FLAGS) -c $(SRCDIR)/m_read_in_data.f90 -o $(OBJDIR)/m_read_in_data.o
 
 # Compile m_field module
 $(OBJDIR)/m_field.o: $(SRCDIR)/m_field.f90

@@ -2,6 +2,7 @@ module m_cells
     implicit none
     private
     public :: ghost_cell
+    public :: create_output
 
     contains
     subroutine boundary_conditions(delta_x, Ngrid, BC_type, bc_value1, bc_value2, u_old, u)
@@ -22,7 +23,7 @@ module m_cells
         case('dirichlet')
                 u(2)         = bc_value1    
                 u(1)         = bc_value1
-                u(size(u)-1) = bc_value2
+                u(size(u)-1) = bc_value2    
                 u(size(u))   = bc_value2
         case default
             write(*,*) "*ERROR* Invalid boundary condition type"
@@ -49,4 +50,30 @@ module m_cells
         call boundary_conditions(delta_x, Ngrid, BC_type, bc_value1, bc_value2, input_value, ghost_layer)
     end subroutine ghost_cell
 
+    subroutine create_output(Ngrid, t, x, nion, phi, n, E)
+        integer, intent(in)  :: Ngrid, t
+        real, intent(in)     :: x(Ngrid), nion(Ngrid), phi(Ngrid), n(Ngrid), E(Ngrid)
+        character(len=100)   :: filename
+        integer              :: i
+        integer              :: file_unit = 1
+        
+        ! Open file
+        write(filename, '(A, I6.6, A)') 'output/output_t', t, '.txt'
+         
+        ! Open file for writing
+        open(unit=file_unit, file=filename, status='replace')
+        
+        ! Write header
+        write(file_unit, '(A)') 'Time Step |         x        |         nion        |       phi       |         n        |       E      '
+        write(file_unit, '(A)') '-------------------------------------------------------------'
+    
+        ! Write data for each grid point
+        do i = 1, Ngrid
+            write(file_unit, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') &
+                x(i), nion(i), phi(i), n(i), E(i)
+        end do
+        
+        ! Close the file
+        close(file_unit)
+    end subroutine create_output
 end module m_cells

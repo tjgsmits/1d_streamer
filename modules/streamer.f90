@@ -25,7 +25,7 @@ program streamer
         t_sim         = 10e-9
         dt            = 1e-13
         V_right       = 0.0
-        V_left        = 500.e2
+        V_left        = 500.e1
         save_interval = 1000
     
         allocate(n_electron(Nx))
@@ -40,8 +40,8 @@ program streamer
         end do
 
         ! Set-up initial densities
-        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Constant", n_electron)
-        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Constant", n_ion)
+        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Point_step", n_electron)
+        call initial_dens(Nx, 1.e11, 0.1e-3, x, "Point_step", n_ion)
 
         ! Make the simulation
         call simulation(Nx, L, t_sim, dt, V_left, V_right, n_ion, n_electron, E, phi, save_interval)        
@@ -65,7 +65,7 @@ program streamer
         real                   :: n_enew(Ngrid), n_inew(Ngrid), n_gnew(Ngrid)
         real                   :: n_diff(Ngrid), n_drift(Ngrid), n_source(Ngrid), n_gas(Ngrid)
         character(len=100)     :: filename, sim_type
-        integer                :: file
+        integer                :: file = 1
         integer                :: save_interval
         real                   :: x(Ngrid)
         real                   :: v(Ngrid)
@@ -82,14 +82,6 @@ program streamer
         diff = 1.0e0
         mob  = 1.0e0
     
-        ! Open file for writing
-        filename = 'data_output.txt'
-        open(unit=file, file=filename, status='replace')
-    
-        ! Write header
-        write(file, '(A)') 'Time Step |         x        |         nion        |       phi       |         n        |       E      '
-        write(file, '(A)') '-------------------------------------------------------------'
-    
         ! Determine the initial potential due to the applied voltage
         call calc_initial_potential(Ngrid, V_1, V_2, phi)
         ! Determine electric field based on the initial potential
@@ -102,12 +94,6 @@ program streamer
         ! Numerical grid
         do i = 1, Ngrid
             x(i) = (i - 1) * delta_x
-        end do
-
-        ! Write the initial conditions to the output file
-        write(file, '(A, I4, A)') 'Time Step:', 0, ':'
-        do i = 1, Ngrid
-            write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), nion(i), phi(i), n(i), E(i)                  
         end do
         
         ! Calculate the gas density
@@ -176,11 +162,7 @@ program streamer
 
                     ! Save data at specified intervals
                     if (MOD(t, save_interval) == 0 .or. t == 1) then
-                        write(file, '(A, I10, A)') 'Time Step:', t, ':'
-                        do i = 1, Ngrid
-                            write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), nion(i), phi(i), n(i), E(i)               
-                        end do
-                        write(file, *) ''  ! Blank line for separation
+                        call create_output(Ngrid, t, x, nion, phi, n, E)
                     end if
 
             else if (sim_type == "implicit") then 
@@ -229,11 +211,10 @@ program streamer
                     do i = 1, Ngrid
                         x(i) = (i - 1) * delta_x
                     end do
-                    write(file, '(A, I4, A)') 'Time Step:', t, ':'
-                    do i = 1, Ngrid
-                            write(file, '(F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X, F20.10E12.4, 1X)') x(i), E(i), phi(i), n(i), nion(i)                
-                    end do
-                    write(file, *) ''  ! Blank line for separation
+                    ! Save data at specified intervals
+                    if (MOD(t, save_interval) == 0 .or. t == 1) then
+                        call create_output(Ngrid, t, x, nion, phi, n, E)
+                    end if
                 end if
             else
                 write(*,*) 'Choose time stepping scheme'
@@ -241,9 +222,6 @@ program streamer
             end if 
 
         end do
-    
-        ! Close file
-        close(file)
         write(*,*) 'Total time =', t * delta_t, 's'
     end subroutine time_integration
     
